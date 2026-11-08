@@ -1,0 +1,9 @@
+{
+  "email_already_registered": "An account with this email already exists",
+  "invalid_credentials": "Incorrect email or password",
+  "invalid_token": "Invalid authentication credentials",
+  "user_not_found": "User not found",
+  "task_not_found": "Task not found",
+  "user_created": "User created successfully",
+  "welcome_back": "Welcome back"
+}

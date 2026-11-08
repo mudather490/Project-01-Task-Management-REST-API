@@ -1,0 +1,11 @@
+# Keep development-only files out of the Vercel bundle.
+venv/
+.venv/
+**/__pycache__/
+.pytest_cache/
+backend/tests/
+**/*.db
+**/*.sqlite3
+task_management.db
+test.db
+*.log

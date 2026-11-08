@@ -1,0 +1,9 @@
+{
+  "email_already_registered": "يوجد حساب مسجل بهذا البريد الإلكتروني",
+  "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+  "invalid_token": "بيانات المصادقة غير صالحة",
+  "user_not_found": "المستخدم غير موجود",
+  "task_not_found": "المهمة غير موجودة",
+  "user_created": "تم إنشاء المستخدم بنجاح",
+  "welcome_back": "أهلاً بعودتك"
+}

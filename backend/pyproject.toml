@@ -1,0 +1,21 @@
+[project]
+name = "task-management-api"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.5.2",
+    "sqlalchemy==2.0.35",
+    "python-jose[cryptography]==3.3.0",
+    "passlib[bcrypt]==1.7.4",
+    "bcrypt==4.0.1",
+    "python-dotenv==1.0.1",
+    "psycopg[binary]==3.2.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.vercel]
+entrypoint = "app.main:app"
