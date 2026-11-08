@@ -19,6 +19,14 @@ A production-ready **Python (FastAPI) + Next.js** portfolio project: multi-user 
 - **Today Queue:** `GET /api/tasks/today` returns tasks due today + tomorrow + overdue (sorted by due_date) — used for sidebar badges & overdue toast
 - **22 Passing Tests** — auth, ownership isolation, filtering, pagination, i18n, edge cases (empty title, invalid enums, expired tokens, overdue logic)
 
+## Quality checks (verified in the browser)
+
+- `npx tsc --noEmit` — clean
+- `npx next build --webpack` — 6 static routes, success
+- `pytest` — 22 passed
+- Lighthouse — Accessibility **92**, Best Practices **100**, SEO **100** (remaining: muted-text contrast, small touch targets)
+- Interactions verified end-to-end: Quick Add (EN/AR parsing), detail panel autosave, status/priority/due changes, delete + Undo, Filter/Sort/search, board drag-and-drop, `?task=`/`?new=1` deep links, shortcuts (`/`, `N`, `⌘K`), Arabic RTL, dark mode, mobile drawer
+
 ## Architecture
 
 ```
