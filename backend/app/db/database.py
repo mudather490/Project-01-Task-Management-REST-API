@@ -11,16 +11,19 @@ database_url = settings.sqlalchemy_database_url
 connect_args: dict = {}
 engine_kwargs: dict = {}
 
-if database_url.startswith("sqlite"):
+is_libsql = "libsql" in database_url
+
+if database_url.startswith("sqlite") and not is_libsql:
     connect_args = {"check_same_thread": False}
 else:
-    # Serverless-friendly pool settings. Neon/Supabase can drop idle
-    # connections, so validate them before use.
+    # Serverless-friendly pool settings (Postgres and Turso both drop idle
+    # connections, so validate them before use).
     engine_kwargs = {"pool_pre_ping": True, "pool_recycle": 300}
 
     # Supabase's transaction pooler (port 6543) does not support prepared
-    # statements. The session pooler (5432) does not need this flag.
-    if ":6543" in database_url:
+    # statements. The session pooler (5432) does not need this flag, and
+    # the flag is meaningless for Turso — skip it there.
+    if ":6543" in database_url and not is_libsql:
         connect_args = {"prepare_threshold": None}
 
 engine = create_engine(

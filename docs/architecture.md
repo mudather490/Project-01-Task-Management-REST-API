@@ -41,7 +41,7 @@ sequenceDiagram
     participant C as Client
     participant F as FastAPI
     participant D as get_current_user
-    participant DB as Supabase Postgres / SQLite
+    participant DB as Turso (SQL) / SQLite
     activate F
 
     C->>F: POST /api/auth/login {email, password}
@@ -70,7 +70,7 @@ sequenceDiagram
 | D7 | Every task query scoped by `user_id` from token | Data isolation is a security boundary |
 | D8 | Passwords bcrypt-hashed only | Even a DB leak cannot recover plain passwords |
 | D9 | `users.language` + translation at presentation edge | Bilingual without duplicate columns in tasks |
-| D10 | SQLite (dev) → Supabase Postgres (prod) via `DATABASE_URL` | Fast local iteration + durable production storage |
+| D10 | SQLite (dev) → Turso SQL (prod) via `DATABASE_URL` | Fast local iteration + durable production storage |
 | D11 | Hard delete in MVP | Soft delete deferred to a later upgrade exercise |
 | D12 | One Vercel project (Services): `/` → Next.js, `/api/*` → FastAPI | Single domain + single deployment; browser calls same-origin `/api`, no `NEXT_PUBLIC_API_URL` or browser CORS |
 
@@ -85,8 +85,8 @@ flowchart LR
         W[Next.js — frontend/]
         F[FastAPI — backend/app.main:app]
     end
-    subgraph Supabase
-        DB[(Postgres<br/>managed, encrypted)]
+    subgraph Turso
+        DB[(SQL<br/>managed, encrypted)]
     end
     U --HTTPS--> W
     U --HTTPS /api/*--> F
@@ -94,11 +94,11 @@ flowchart LR
     F -->|JWT verify| F
 ```
 
-### Why serverless + Supabase?
+### Why serverless + Turso?
 
 - **Vercel Functions** have ephemeral filesystem — SQLite files disappear between invocations ("hotel room" problem).
-- **Supabase Postgres** persists data on managed storage with encryption and connection pooling.
-- Switching environments = changing `DATABASE_URL` only (SQLAlchemy abstracts the driver; psycopg 3 handles `postgresql://` → `postgresql+psycopg://`).
+- **Turso (SQL)** persists data on managed storage with encryption (SQLite at heart, durable).
+- Switching environments = changing `DATABASE_URL` only (SQLAlchemy abstracts the driver; `libsql://` → `sqlite+libsql://&secure=true`).
 
 ## API Surface
 

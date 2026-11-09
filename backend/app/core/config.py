@@ -32,28 +32,42 @@ class Settings(BaseSettings):
         if not self.DATABASE_URL.strip():
             raise ValueError(
                 "DATABASE_URL is empty. Set it in the environment "
-                "(e.g. Supabase/Neon Postgres connection string)."
+                "(e.g. Turso libsql://, Supabase/Neon postgresql://, or the "
+                "default local SQLite file for development)."
             )
-        if not self.DEBUG and self.sqlalchemy_database_url.startswith("sqlite"):
+        is_file_sqlite = self.sqlalchemy_database_url.startswith("sqlite://") and (
+            "libsql" not in self.sqlalchemy_database_url
+        )
+        if not self.DEBUG and is_file_sqlite:
             raise ValueError(
-                "DATABASE_URL must point to Postgres when DEBUG=false "
-                "(SQLite is not available on serverless filesystems). "
-                "Set DATABASE_URL in the environment (e.g. Supabase/Neon)."
+                "DATABASE_URL must point to a remote database (Postgres or "
+                "Turso libsql) when DEBUG=false: a local SQLite file is not "
+                "available on serverless filesystems and would lose data. "
+                "Set DATABASE_URL in the environment."
             )
         return self
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        """Return a SQLAlchemy URL using the installed psycopg 3 driver.
+        """Return a SQLAlchemy URL using the installed driver for this backend.
 
-        Supabase/Neon both hand out ``postgresql://`` URLs. SQLAlchemy would
-        otherwise look for psycopg2, while this project installs psycopg 3.
+        - Postgres (Supabase/Neon) → ``postgresql+psycopg://`` (psycopg 3 is installed).
+        - Turso (libsql) → ``sqlite+libsql://...&secure=true`` so the app can
+          run a durable SQLite-family database on serverless filesystems.
+        Single-file SQLite (``sqlite:///...``) stays available for local dev.
         """
         url = self.DATABASE_URL.strip()
         if url.startswith("postgres://"):
             return url.replace("postgres://", "postgresql+psycopg://", 1)
         if url.startswith("postgresql://"):
             return url.replace("postgresql://", "postgresql+psycopg://", 1)
+        if url.startswith("libsql://"):
+            # Turso dashboard gives: libsql://host?authToken=JWT
+            turso_url = url.replace("libsql://", "sqlite+libsql://", 1)
+            if "secure=" not in turso_url:
+                separator = "&" if "?" in turso_url else "?"
+                turso_url = f"{turso_url}{separator}secure=true"
+            return turso_url
         return url
 
 

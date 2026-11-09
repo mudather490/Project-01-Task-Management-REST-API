@@ -1,4 +1,4 @@
-# Deployment Guide — One Vercel Project (Services) + Supabase
+# Deployment Guide — One Vercel Project (Services) + Turso
 
 This app deploys as **one Vercel project** using [Vercel Services](https://vercel.com/docs/services): the Next.js frontend and the FastAPI backend build together and share one domain.
 
@@ -8,18 +8,17 @@ https://your-app.vercel.app
 └── /api/*   → FastAPI (backend/)
 ```
 
-Only the database lives outside Vercel: Supabase Postgres. Authentication stays the existing custom JWT flow.
+Only the database lives outside Vercel: **Turso** (serverless SQL — SQLite at heart, durable and free for small apps). Authentication stays the existing custom JWT flow.
 
-## 1. Supabase Postgres
-- Go to https://supabase.com → Create project.
-- Copy the **session pooler** connection string (port `5432`, `sslmode=require`), for example:
-
+## 1. Turso (serverless SQL)
+- Go to https://turso.tech → sign up → create a database (dashboard or `turso db create taskflow`).
+- Copy its **URL + auth token** (dashboard → database → Connection info). The URL looks like:
   ```env
-  DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+  DATABASE_URL=libsql://<your-database>.<your-account>.turso.io?authToken=<token>
   ```
-
-- The backend converts `postgresql://` to `postgresql+psycopg://` internally (psycopg 3). If you use the transaction pooler (`:6543`), the backend disables prepared statements automatically.
-- Keep the password private; paste the URL only into Vercel env vars.
+- The backend converts `libsql://` to `sqlite+libsql://&secure=true` internally (SQLAlchemy-libsql dialect).
+- Keep the token private; paste the URL only into Vercel env vars.
+- (Postgres via Neon/Supabase is still accepted — `postgresql://` is converted to the installed psycopg 3 driver.)
 
 ## 2. One Vercel Project (Services)
 - Push the repo to GitHub.
@@ -51,7 +50,7 @@ Only the database lives outside Vercel: Supabase Postgres. Authentication stays 
   ```
 
 - Env Vars (set once on the single project):
-  - `DATABASE_URL` = Supabase connection string above
+  - `DATABASE_URL` = Turso `libsql://…?authToken=…` URL above
   - `SECRET_KEY` = `openssl rand -hex 32`
   - `DEBUG` = `false`
 - Do **not** set `NEXT_PUBLIC_API_URL` — the browser calls `/api` same-origin.
@@ -96,10 +95,10 @@ curl -X POST https://your-app.vercel.app/api/auth/login -H "Content-Type: applic
 - `terms like framework: other` in Vercel settings: the project must use the **Services** preset with root at the repo root; otherwise Vercel builds only one side.
 - `Error 500` on **Create account** (register) in production: check in this order —
   1. `curl https://<domain>/api/health` → must be `200`. If `404`/`NOT_FOUND` from Vercel, `/api/*` is not reaching the FastAPI service: confirm the deployment is a **Services** deployment (both `services/api/fastapi` and `services/web/index` in the build output) and that `vercel.json` still has the top-level rewrites (`/api/(.*)` → service `api`).
-  2. `curl https://<domain>/api/ready` → must be `200 {"status":"ready","database":"ok"}`. If `503`, the database is unreachable — check `DATABASE_URL` in Vercel Dashboard → project → **Settings → Environment Variables** → must be set for **Production** (Supabase/Neon **session pooler**, `:5432`, `sslmode=require`), then redeploy (`vercel --prod`).
+  2. `curl https://<domain>/api/ready` → must be `200 {"status":"ready","database":"ok"}`. If `503`, the database is unreachable — check `DATABASE_URL` in Vercel Dashboard → project → **Settings → Environment Variables** → must be set for **Production** (Turso `libsql://…?authToken=…`), then redeploy (`vercel --prod`).
   3. `DEBUG=false` with a missing/empty `DATABASE_URL` now fails fast at boot (previously this surfaced as an opaque 500 on register).
 - `429` after too many sign-in attempts: auth endpoints are rate-limited in production (register 10/min, login 20/min per IP) — wait a minute and retry.
 
 ## 6. Cost & Limits
 - Vercel Hobby: 100 GB bandwidth, serverless function limits.
-- Supabase Free: 500 MB database, 1 GB storage, pauses after 1 week of inactivity (project pause + restore).
+- Turso Free: 500 MB database, 9 GB bandwidth/month (data persists; no timeout pauses).

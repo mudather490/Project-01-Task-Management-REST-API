@@ -1,6 +1,6 @@
 # TaskFlow — Bilingual Multi-User To-Do App
 
-A production-ready **Python (FastAPI) + Next.js** portfolio project: multi-user Task Management API with a fantastic, responsive, fully bilingual (EN/AR + RTL) frontend. Deployed as **one Vercel project** (Vercel Services) with **Supabase Postgres** (production) / **SQLite** (development).
+A production-ready **Python (FastAPI) + Next.js** portfolio project: multi-user Task Management API with a fantastic, responsive, fully bilingual (EN/AR + RTL) frontend. Deployed as **one Vercel project** (Vercel Services) with **Turso (SQL)** (production) / **SQLite** (development).
 
 ![Dashboard EN light (list)](docs/screenshots/dashboard-list-en-light.png)
 
@@ -32,7 +32,7 @@ A production-ready **Python (FastAPI) + Next.js** portfolio project: multi-user 
 ```
 User ─HTTPS─▶ One Vercel Project (one domain, one deployment)
                ├── /        → Next.js (frontend/)
-               └── /api/*   → FastAPI (backend/) ──▶ Supabase Postgres
+               └── /api/*   → FastAPI (backend/) ──▶ Turso (SQL)
                                    └─ Local dev: SQLite
 ```
 
@@ -76,14 +76,14 @@ pytest tests/ -v
 
 | Variable | Where | Example |
 |---|---|---|
-| `DATABASE_URL` | Backend (Vercel project) | `postgresql://...` (Supabase pooler URL) |
+| `DATABASE_URL` | Backend (Vercel project) | `libsql://...?authToken=...` (Turso URL) |
 | `SECRET_KEY` | Backend (Vercel project) | long random string |
 
 > Never commit `.env`. The frontend does not need `NEXT_PUBLIC_API_URL` in the single-app deployment.
 
-## Deployment (One Vercel Project + Supabase)
+## Deployment (One Vercel Project + Turso)
 
-1. Create a **Supabase** project → copy the connection string (session pooler on `:5432`, `sslmode=require`).
+1. Create a **Turso** database → copy the URL + auth token (`libsql://...?authToken=...`).
 2. Push the repo to GitHub.
 3. Vercel → New Project → Import repo → **Root Directory = repository root** → **Framework Preset = Services**.
 4. Set env vars on the single project: `DATABASE_URL`, `SECRET_KEY`, `DEBUG=false`.
@@ -125,7 +125,7 @@ project-01/
 
 - Validation ≠ Normalization (strip + lowercasing prevents duplicate accounts)
 - `jose` requires JWT `sub` as string — otherwise `Subject must be a string`
-- Serverless ephemerality: SQLite dies on Vercel → Supabase/Neon Postgres persists
+- Serverless ephemerality: SQLite files die on Vercel → Turso (SQL, durable) persists
 - Presentation vs Storage: system messages translate at the edge, content stays free text
 - Ownership isolation is a security feature, not a filter
 - One-origin `/api` routing removes CORS and API-URL config for a full-stack deploy

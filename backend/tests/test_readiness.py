@@ -68,6 +68,17 @@ def test_production_accepts_postgres_url():
     assert settings.sqlalchemy_database_url.startswith("postgresql+psycopg://")
 
 
+def test_production_accepts_turso_url():
+    settings = Settings(
+        DATABASE_URL="libsql://taskflow-user.turso.io?authToken=eyJhbGciOi",
+        DEBUG=False,
+    )
+    url = settings.sqlalchemy_database_url
+    assert url.startswith("sqlite+libsql://")
+    assert "authToken=eyJhbGciOi" in url
+    assert "secure=true" in url
+
+
 def test_rate_limit_disabled_in_debug_mode():
     """With DEBUG=true the limiter never throttles (keeps the suite hermetic)."""
     for i in range(12):
