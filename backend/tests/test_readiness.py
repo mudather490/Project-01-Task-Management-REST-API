@@ -55,6 +55,11 @@ def test_production_fails_fast_on_sqlite():
         Settings(DATABASE_URL="sqlite:///./task_management.db", DEBUG=False)
 
 
+def test_empty_database_url_always_fails_fast():
+    with pytest.raises(ValidationError, match="empty"):
+        Settings(DATABASE_URL="", DEBUG=True)
+
+
 def test_production_accepts_postgres_url():
     settings = Settings(
         DATABASE_URL="postgresql://user:pass@host.pooler.supabase.com:5432/postgres",

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
         POST /api/auth/register). Raising here turns that into a clear
         startup error instead.
         """
+        if not self.DATABASE_URL.strip():
+            raise ValueError(
+                "DATABASE_URL is empty. Set it in the environment "
+                "(e.g. Supabase/Neon Postgres connection string)."
+            )
         if not self.DEBUG and self.sqlalchemy_database_url.startswith("sqlite"):
             raise ValueError(
                 "DATABASE_URL must point to Postgres when DEBUG=false "
