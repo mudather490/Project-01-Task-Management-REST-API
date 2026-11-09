@@ -8,10 +8,17 @@ from app.core.config import settings
 
 database_url = settings.sqlalchemy_database_url
 
+is_libsql = "libsql" in database_url
+
+if is_libsql:
+    # Register our own sqlite.libsql dialect (backed by the official
+    # `libsql` SDK) instead of sqlalchemy-libsql's stale libsql-client.
+    from sqlalchemy.dialects import registry
+
+    registry.register("sqlite.libsql", "app.db.libsql_dialect", "SQLiteDialect_libsql")
+
 connect_args: dict = {}
 engine_kwargs: dict = {}
-
-is_libsql = "libsql" in database_url
 
 if database_url.startswith("sqlite") and not is_libsql:
     connect_args = {"check_same_thread": False}

@@ -12,6 +12,7 @@ dependencies = [
     "bcrypt==4.0.1",
     "sqlalchemy-libsql==0.1.0",
     "libsql-client==0.3.1",
+    "libsql==0.1.11",
     "python-dotenv==1.0.1",
     "psycopg[binary]==3.2.8",
 ]
