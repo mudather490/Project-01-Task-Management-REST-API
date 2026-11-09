@@ -5,5 +5,8 @@
   "user_not_found": "User not found",
   "task_not_found": "Task not found",
   "user_created": "User created successfully",
-  "welcome_back": "Welcome back"
+  "welcome_back": "Welcome back",
+  "internal_error": "Something went wrong. Please try again.",
+  "db_unreachable": "Database is not reachable right now. Please try again in a moment.",
+  "rate_limited": "Too many attempts. Please wait a moment and try again."
 }

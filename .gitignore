@@ -16,3 +16,6 @@ htmlcov/
 frontend/.next/
 frontend/node_modules/
 .vercel/
+
+.vercel
+.env*

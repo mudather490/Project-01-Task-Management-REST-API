@@ -1,18 +1,23 @@
 from contextlib import asynccontextmanager
+import logging
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.db.database import Base, engine
+from app.core.i18n import translate
+from app.db.database import init_db
 from app.db import models  # noqa: F401 - ensure models are registered
 from app.routers import auth, health, tasks, users
+
+logger = logging.getLogger("taskflow")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create tables on first request instead of at import/build time."""
-    Base.metadata.create_all(bind=engine)
+    init_db()
     yield
 
 
@@ -45,3 +50,23 @@ api_router.include_router(users.router)
 api_router.include_router(tasks.router)
 
 app.include_router(api_router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Catch-all: log the traceback, return a bilingual JSON error.
+
+    Without this, unexpected failures reach the client as a bare "Error 500"
+    with no code the UI can translate.
+    """
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    lang = request.headers.get("accept-language", "en").split("-")[0].lower()
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {
+                "code": "internal_error",
+                "message": translate(lang, "internal_error"),
+            }
+        },
+    )

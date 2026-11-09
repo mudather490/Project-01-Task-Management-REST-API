@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.i18n import translate
+from app.core.ratelimit import rate_limit
 from app.core.security import create_access_token, verify_password
 from app.crud.users import create_user, get_user_by_email, normalize_email
 from app.db.database import get_db
@@ -16,7 +17,12 @@ def get_lang(request: Request) -> str:
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def register(payload: UserCreate, request: Request, db: Session = Depends(get_db)):
+def register(
+    payload: UserCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    _rl=Depends(rate_limit(10, "auth_register")),
+):
     lang = get_lang(request)
     email = normalize_email(payload.email)
     existing = get_user_by_email(db, email)
@@ -33,7 +39,12 @@ def register(payload: UserCreate, request: Request, db: Session = Depends(get_db
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: UserCreate, request: Request, db: Session = Depends(get_db)):
+def login(
+    payload: UserCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    _rl=Depends(rate_limit(20, "auth_login")),
+):
     lang = get_lang(request)
     email = normalize_email(payload.email)
     user = get_user_by_email(db, email)

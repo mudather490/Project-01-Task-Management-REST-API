@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +18,24 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
+    @model_validator(mode="after")
+    def _require_database_in_production(self):
+        """Fail fast at boot when production has no Postgres DATABASE_URL.
+
+        Without this check, missing DATABASE_URL silently selects the
+        default SQLite file, which is read-only on serverless filesystems
+        and surfaces as an opaque 500 on the first database write (e.g.
+        POST /api/auth/register). Raising here turns that into a clear
+        startup error instead.
+        """
+        if not self.DEBUG and self.sqlalchemy_database_url.startswith("sqlite"):
+            raise ValueError(
+                "DATABASE_URL must point to Postgres when DEBUG=false "
+                "(SQLite is not available on serverless filesystems). "
+                "Set DATABASE_URL in the environment (e.g. Supabase/Neon)."
+            )
+        return self
 
     @property
     def sqlalchemy_database_url(self) -> str:

@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+import time
 
 from app.core.config import settings
 
@@ -28,6 +30,23 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db(retries: int = 3) -> None:
+    """Create tables if missing.
+
+    On serverless platforms several cold-start instances can run this
+    concurrently; the losers get "relation already exists" (ProgrammingError)
+    or transient connection errors. Retrying makes startup idempotent-safe.
+    """
+    for attempt in range(retries):
+        try:
+            Base.metadata.create_all(bind=engine)
+            return
+        except (OperationalError, ProgrammingError):
+            if attempt == retries - 1:
+                raise
+            time.sleep(0.5 * (attempt + 1))
 
 
 class Base(DeclarativeBase):

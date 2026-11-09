@@ -94,6 +94,11 @@ curl -X POST https://your-app.vercel.app/api/auth/login -H "Content-Type: applic
 - CORS: same-origin calls need no CORS. Direct calls to the API from another origin must be listed in `backend/.env` → `CORS_ORIGINS`.
 - Token expired: frontend redirects to `/login?reason=expired` — login again.
 - `terms like framework: other` in Vercel settings: the project must use the **Services** preset with root at the repo root; otherwise Vercel builds only one side.
+- `Error 500` on **Create account** (register) in production: check in this order —
+  1. `curl https://<domain>/api/health` → must be `200`. If `404`/`NOT_FOUND` from Vercel, `/api/*` is not reaching the FastAPI service: confirm the deployment is a **Services** deployment (both `services/api/fastapi` and `services/web/index` in the build output) and that `vercel.json` still has the top-level rewrites (`/api/(.*)` → service `api`).
+  2. `curl https://<domain>/api/ready` → must be `200 {"status":"ready","database":"ok"}`. If `503`, the database is unreachable — check `DATABASE_URL` in Vercel Dashboard → project → **Settings → Environment Variables** → must be set for **Production** (Supabase/Neon **session pooler**, `:5432`, `sslmode=require`), then redeploy (`vercel --prod`).
+  3. `DEBUG=false` with a missing/empty `DATABASE_URL` now fails fast at boot (previously this surfaced as an opaque 500 on register).
+- `429` after too many sign-in attempts: auth endpoints are rate-limited in production (register 10/min, login 20/min per IP) — wait a minute and retry.
 
 ## 6. Cost & Limits
 - Vercel Hobby: 100 GB bandwidth, serverless function limits.
